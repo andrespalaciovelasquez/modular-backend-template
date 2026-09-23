@@ -33,56 +33,6 @@ Simplemente cambiando la extensión y usando las herramientas de tu lenguaje fav
 
 ---
 
-## ⚖️ ¿Por qué Modular ("Package by Feature") y NO por Capas ("Package by Layer")?
-
-### El colapso de las 20+ entidades en proyectos reales
-La mayoría de tutoriales iniciales enseñan una arquitectura horizontal por capas:
-```text
-❌ ARQUITECTURA HORIZONTAL (Package by Layer):
-src/
-├── controllers/  (usuarios_controller, productos_controller, facturas_controller...)
-├── services/     (usuarios_service, productos_service, facturas_service...)
-└── models/       (usuarios_model, productos_model, facturas_model...)
-```
-Cuando el proyecto supera las 10 o 20 entidades de negocio, esta estructura se vuelve **insostenible**:
-1. **Sobrecarga cognitiva**: Para implementar o modificar una sola característica (ej. `usuarios`), el desarrollador debe abrir 5 carpetas distintas y saltar entre decenas de archivos desconectados.
-2. **Conflictos de fusión (Merge Conflicts)**: Múltiples desarrolladores modifican permanentemente los mismos directorios centralizados (`controllers/`, `services/`), generando fricción constante en Git.
-3. **Alto Acoplamiento y Dependencias Circulares**: Es fácil que un servicio acceda accidentalmente a modelos de otro dominio sin control, convirtiendo la base de código en un "monolito de espagueti".
-
-### La Solución: Paquetes por Característica / Contextos Delimitados (DDD)
-```text
-✅ ARQUITECTURA MODULAR (Package by Feature):
-app/
-└── modulos/
-    ├── usuarios/   (routes, schemas, services, models, repository)
-    ├── productos/  (routes, schemas, services, models, repository)
-    └── facturacion/(routes, schemas, services, models, repository)
-```
-- **Alta Cohesión Interna**: Todo lo relativo a un dominio vive junto. Entender cómo funciona un módulo requiere inspeccionar una sola carpeta.
-- **Bajo Acoplamiento Externo**: Los módulos se comunican entre sí a través de interfaces de servicio bien definidas, no importando detalles internos ni tablas de base de datos de otros dominios.
-
----
-
-## 🚀 Camino Natural hacia Microservicios (Evolución sin Trauma)
-
-Uno de los mayores beneficios de esta estructura modular es que prepara al proyecto para el crecimiento futuro:
-
-```text
-[ MONOLITO MODULAR ACTUAL ]                [ FUTURA ARQUITECTURA DISTRIBUIDA ]
-app/                                       
-├── core/                                  
-└── modulos/                               
-    ├── usuarios/    ───────────────────►   Microservicio A (Auth & Users API)
-    ├── productos/   ───────────────────►   Microservicio B (Catalog Service)
-    └── facturacion/ ───────────────────►   Microservicio C (Billing Service)
-```
-
-- **Si tu aplicación es un monolito**: Se ejecuta de forma eficiente en un solo proceso, con despliegue sencillo y sin la complejidad de red ni orquestación de microservicios.
-- **Si un módulo específico demanda escalar de forma independiente** (por ejemplo, `facturacion` requiere escalado horizontal propio): **Extraerlo es trivial**. Basta con mover la carpeta `modulos/facturacion/` a su propio repositorio o contenedor, ya que sus rutas, reglas de negocio, modelos y persistencia están completamente autocontenidos.
-- En una estructura horizontal tradicional por capas, separar un microservicio requiere "hacer arqueología" de código y desenredar dependencias cruzadas durante semanas.
-
----
-
 ## 🚦 La Matriz de Impacto: El Semáforo Arquitectónico
 
 Cada archivo de este proyecto respeta una regla estricta de aislamiento visualizada mediante colores:
@@ -116,3 +66,53 @@ mi_proyecto/
 - 🟢 **Verde (Core & Dominio Puro - 100% Agnóstico)**: No tiene dependencias de transporte web (sin `Request`, `HTTPException`, etc.). Es código de negocio puro, reutilizable y testeable en milisegundos mediante pruebas unitarias puras.
 - 🟡 **Amarillo (Persistencia y Contratos de Datos - Acoplado a Bibliotecas)**: Depende de bibliotecas especializadas (ORM, validador de esquemas), pero permanece aislado del protocolo web. Si cambias de FastAPI a Flask o a un comando CLI, esta capa no cambia.
 - 🔴 **Rojo (Transporte Web y Framework - Capa Externa Volátil)**: Es el "pegamento" que recibe peticiones del exterior (HTTP, WebSockets, gRPC). Es la única capa que cambia si sustituyes o actualizas el framework web.
+
+---
+
+## 🚀 Camino Natural hacia Microservicios (Evolución sin Trauma)
+
+Uno de los mayores beneficios de esta estructura modular es que prepara al proyecto para el crecimiento futuro:
+
+```text
+[ MONOLITO MODULAR ACTUAL ]                [ FUTURA ARQUITECTURA DISTRIBUIDA ]
+app/                                       
+├── core/                                  
+└── modulos/                               
+    ├── usuarios/    ───────────────────►   Microservicio A (Auth & Users API)
+    ├── productos/   ───────────────────►   Microservicio B (Catalog Service)
+    └── facturacion/ ───────────────────►   Microservicio C (Billing Service)
+```
+
+- **Si tu aplicación es un monolito**: Se ejecuta de forma eficiente en un solo proceso, con despliegue sencillo y sin la complejidad de red ni orquestación de microservicios.
+- **Si un módulo específico demanda escalar de forma independiente** (por ejemplo, `facturacion` requiere escalado horizontal propio): **Extraerlo es trivial**. Basta con mover la carpeta `modulos/facturacion/` a su propio repositorio o contenedor, ya que sus rutas, reglas de negocio, modelos y persistencia están completamente autocontenidos.
+- En una estructura horizontal tradicional por capas, separar un microservicio requiere "hacer arqueología" de código y desenredar dependencias cruzadas durante semanas.
+
+---
+
+## ⚖️ ¿Por qué Modular ("Package by Feature") y NO por Capas ("Package by Layer")?
+
+### El colapso de las 20+ entidades en proyectos reales
+La mayoría de tutoriales iniciales enseñan una arquitectura horizontal por capas:
+```text
+❌ ARQUITECTURA HORIZONTAL (Package by Layer):
+src/
+├── controllers/  (usuarios_controller, productos_controller, facturas_controller...)
+├── services/     (usuarios_service, productos_service, facturas_service...)
+└── models/       (usuarios_model, productos_model, facturas_model...)
+```
+Cuando el proyecto supera las 10 o 20 entidades de negocio, esta estructura se vuelve **insostenible**:
+1. **Sobrecarga cognitiva**: Para implementar o modificar una sola característica (ej. `usuarios`), el desarrollador debe abrir 5 carpetas distintas y saltar entre decenas de archivos desconectados.
+2. **Conflictos de fusión (Merge Conflicts)**: Múltiples desarrolladores modifican permanentemente los mismos directorios centralizados (`controllers/`, `services/`), generando fricción constante en Git.
+3. **Alto Acoplamiento y Dependencias Circulares**: Es fácil que un servicio acceda accidentalmente a modelos de otro dominio sin control, convirtiendo la base de código en un "monolito de espagueti".
+
+### La Solución: Paquetes por Característica / Contextos Delimitados (DDD)
+```text
+✅ ARQUITECTURA MODULAR (Package by Feature):
+app/
+└── modulos/
+    ├── usuarios/   (routes, schemas, services, models, repository)
+    ├── productos/  (routes, schemas, services, models, repository)
+    └── facturacion/(routes, schemas, services, models, repository)
+```
+- **Alta Cohesión Interna**: Todo lo relativo a un dominio vive junto. Entender cómo funciona un módulo requiere inspeccionar una sola carpeta.
+- **Bajo Acoplamiento Externo**: Los módulos se comunican entre sí a través de interfaces de servicio bien definidas, no importando detalles internos ni tablas de base de datos de otros dominios.
