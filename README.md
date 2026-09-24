@@ -89,9 +89,11 @@ app/
 
 ---
 
-## ⚖️ ¿Por qué Modular ("Package by Feature") y NO por Capas ("Package by Layer")?
+## 🏛️ Fundamentos Arquitectónicos: Clean Architecture & DDD
 
-### El colapso de las 20+ entidades en proyectos reales
+### 1. Organización Modular por Dominio (Package by Feature) vs. El Antipatrón Package by Layer
+
+#### El colapso de las 20+ entidades en proyectos reales
 La mayoría de tutoriales iniciales enseñan una arquitectura horizontal por capas:
 ```text
 ❌ ARQUITECTURA HORIZONTAL (Package by Layer):
@@ -105,7 +107,7 @@ Cuando el proyecto supera las 10 o 20 entidades de negocio, esta estructura se v
 2. **Conflictos de fusión (Merge Conflicts)**: Múltiples desarrolladores modifican permanentemente los mismos directorios centralizados (`controllers/`, `services/`), generando fricción constante en Git.
 3. **Alto Acoplamiento y Dependencias Circulares**: Es fácil que un servicio acceda accidentalmente a modelos de otro dominio sin control, convirtiendo la base de código en un "monolito de espagueti".
 
-### La Solución: Paquetes por Característica / Contextos Delimitados (DDD)
+#### La Solución DDD (Package by Feature / Bounded Contexts)
 ```text
 ✅ ARQUITECTURA MODULAR (Package by Feature):
 app/
@@ -116,3 +118,17 @@ app/
 ```
 - **Alta Cohesión Interna**: Todo lo relativo a un dominio vive junto. Entender cómo funciona un módulo requiere inspeccionar una sola carpeta.
 - **Bajo Acoplamiento Externo**: Los módulos se comunican entre sí a través de interfaces de servicio bien definidas, no importando detalles internos ni tablas de base de datos de otros dominios.
+
+---
+
+### 2. Desacoplamiento de Negocio y Persistencia (Services vs. Repository)
+
+- **`services` (Lógica de Negocio Pura 🟢)**: Contiene exclusivamente las reglas de negocio del dominio (ej: *"no se puede transferir saldo si la cuenta está inactiva"* o validaciones de estado). No escribe sentencias SQL, ni transacciones manuales, ni imports del ORM o framework web.
+- **`repository` (Capa de Acceso a Datos 🟡)**: Encapsula todas las operaciones contra la persistencia (consultas, filtros, inserciones con SQLAlchemy, Hibernate, Prisma, Entity Framework, etc.). Abstrae el acceso a datos simulando una colección en memoria, lo que permite testear los servicios mediante mocks ultrarrápidos sin necesidad de levantar una base de datos real.
+
+---
+
+### 3. Aislamiento de Infraestructura Transversal (`core/` y `errors/`)
+
+- **`core/`**: Centraliza la configuración por entornos (`config`), el ciclo de vida del motor de base de datos (`database`) y las utilidades criptográficas (`security`). Evita duplicar lógica repetitiva y garantiza que el arranque falle rápido (*Fail-Fast*) si falta una variable crítica.
+- **`errors/`**: Separa las excepciones semánticas del dominio puro (`exceptions` 🟢: *ej. `SaldoInsuficienteError`*) de los manejadores que las traducen a códigos HTTP (`handlers` 🔴: *ej. `400 Bad Request`*). Así, el dominio no sabe qué es un código HTTP y permanece 100% puro.
